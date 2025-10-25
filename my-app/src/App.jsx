@@ -3,6 +3,10 @@ import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import Autosuggest from 'react-autosuggest';
 import './App.css';
 import MapView from './MapView';
+import train from './assets/train.png';
+
+// Use environment variable in production, deployed backend as fallback
+const API_URL = import.meta.env.VITE_API_URL || 'https://mumbai-journey-planner.onrender.com';
 
 function Home({
   stations, setStations,
@@ -16,13 +20,36 @@ function Home({
   const [to, setTo] = useState('');
   const [fromSuggestions, setFromSuggestions] = useState([]);
   const [toSuggestions, setToSuggestions] = useState([]);
+  const [isWakingUp, setIsWakingUp] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/stations')
-      .then(res => res.json())
-      .then(data => setStations(data))
-      .catch(err => console.error('Failed to load stations:', err));
+    // Load stations with retry logic
+    const loadStations = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/stations`);
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        setStations(data);
+        setIsWakingUp(false);
+      } catch (err) {
+        console.error('Failed to load stations:', err);
+        // If first attempt fails, backend might be waking up
+        setIsWakingUp(true);
+        // Retry after 5 seconds
+        setTimeout(() => {
+          fetch(`${API_URL}/api/stations`)
+            .then(res => res.json())
+            .then(data => {
+              setStations(data);
+              setIsWakingUp(false);
+            })
+            .catch(() => setIsWakingUp(false));
+        }, 5000);
+      }
+    };
+    
+    loadStations();
   }, [setStations]);
 
   function getSuggestions(value) {
@@ -38,53 +65,58 @@ function Home({
   const onFromChange = (e, { newValue }) => setFrom(newValue);
   const onFromSuggestionsFetchRequested = ({ value }) => setFromSuggestions(getSuggestions(value));
   const onFromSuggestionsClearRequested = () => setFromSuggestions([]);
+  
   // Autosuggest handlers for TO
   const onToChange = (e, { newValue }) => setTo(newValue);
   const onToSuggestionsFetchRequested = ({ value }) => setToSuggestions(getSuggestions(value));
   const onToSuggestionsClearRequested = () => setToSuggestions([]);
 
-  function handleFindRoute() {
+  async function handleFindRoute() {
     if (!from || !to) {
       setError('Please enter both stations!');
       setRouteResult(null);
       return;
     }
+    
     setError('');
     setRouteResult(null);
     setAllRoutes(null);
     setLoading(true);
 
-    fetch('http://127.0.0.1:5000/api/journey', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to, routeType })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-          setError(data.error);
-        } else {
-          setRouteResult(data);
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        setError('Could not connect to server. Please make sure backend is running on port 5000.');
-        setLoading(false);
+    try {
+      // Main journey request
+      const journeyRes = await fetch(`${API_URL}/api/journey`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from, to, routeType })
       });
-
-    fetch('http://127.0.0.1:5000/api/journey/all', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.error) {
-          setAllRoutes(data);
-        }
-      })
-      .catch(err => console.error('Failed to load alternatives:', err));
+      
+      const journeyData = await journeyRes.json();
+      
+      if (journeyData.error) {
+        setError(journeyData.error);
+      } else {
+        setRouteResult(journeyData);
+      }
+      
+      // Fetch all routes for comparison
+      const allRoutesRes = await fetch(`${API_URL}/api/journey/all`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from, to })
+      });
+      
+      const allRoutesData = await allRoutesRes.json();
+      if (!allRoutesData.error) {
+        setAllRoutes(allRoutesData);
+      }
+      
+    } catch (err) {
+      console.error('Connection error:', err);
+      setError('⏳ Server is waking up (this takes 30-60 seconds on first load). Please wait a moment and try again!');
+    } finally {
+      setLoading(false);
+    }
   }
 
   function swapStations() {
@@ -97,15 +129,33 @@ function Home({
     <div className="mumbai-card">
       {/* Train Image */}
       <img
-        src="src/assets/train.png"
+        src={train}
         alt="Mumbai Local Train"
         className="mumbai-train-img"
       />
+      
       {/* Header */}
       <div className="mumbai-title">Mumbai Journey Planner</div>
       <div className="mumbai-desc">
         Find the best route across Mumbai Local & Metro
       </div>
+      
+      {/* Wake-up notification */}
+      {isWakingUp && (
+        <div style={{
+          background: '#fef3c7',
+          border: '1px solid #fbbf24',
+          borderRadius: '8px',
+          padding: '12px',
+          marginBottom: '16px',
+          fontSize: '13px',
+          color: '#92400e',
+          textAlign: 'center'
+        }}>
+          ⏳ Loading stations... Server is waking up (may take 30-60 seconds)
+        </div>
+      )}
+      
       {/* Input Section */}
       <div className="mumbai-input-row">
         <Autosuggest
@@ -117,25 +167,30 @@ function Home({
           inputProps={{
             placeholder: 'From station',
             value: from,
-            onChange: onFromChange
+            onChange: onFromChange,
+            disabled: isWakingUp
           }}
         />
+        
         <div style={{ textAlign: 'center', margin: '-8px 0' }}>
           <button
             onClick={swapStations}
+            disabled={isWakingUp}
             style={{
               background: 'none',
               border: 'none',
               fontSize: '24px',
-              cursor: 'pointer',
+              cursor: isWakingUp ? 'not-allowed' : 'pointer',
               padding: '4px',
-              color: '#3b82f6'
+              color: '#3b82f6',
+              opacity: isWakingUp ? 0.5 : 1
             }}
             title="Swap stations"
           >
             ⇅
           </button>
         </div>
+        
         <Autosuggest
           suggestions={toSuggestions}
           onSuggestionsFetchRequested={onToSuggestionsFetchRequested}
@@ -145,10 +200,12 @@ function Home({
           inputProps={{
             placeholder: 'To station',
             value: to,
-            onChange: onToChange
+            onChange: onToChange,
+            disabled: isWakingUp
           }}
         />
       </div>
+      
       {/* Route Type Selection */}
       <div style={{
         display: 'flex',
@@ -172,11 +229,12 @@ function Home({
               background: routeType === option.value ? option.color : '#f1f5f9',
               color: routeType === option.value ? 'white' : '#475569',
               borderRadius: '8px',
-              cursor: 'pointer',
+              cursor: isWakingUp ? 'not-allowed' : 'pointer',
               fontSize: '14px',
               fontWeight: '600',
               transition: 'all 0.2s',
-              border: '2px solid transparent'
+              border: '2px solid transparent',
+              opacity: isWakingUp ? 0.5 : 1
             }}
           >
             <input
@@ -185,25 +243,32 @@ function Home({
               value={option.value}
               checked={routeType === option.value}
               onChange={e => setRouteType(e.target.value)}
+              disabled={isWakingUp}
               style={{ display: 'none' }}
             />
             {option.label}
           </label>
         ))}
       </div>
+      
       <button
         className="mumbai-btn"
         onClick={handleFindRoute}
-        disabled={loading}
-        style={{ opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+        disabled={loading || isWakingUp}
+        style={{ 
+          opacity: (loading || isWakingUp) ? 0.6 : 1, 
+          cursor: (loading || isWakingUp) ? 'not-allowed' : 'pointer' 
+        }}
       >
-        {loading ? '🔍 Finding Best Route...' : '🚀 Find Route'}
+        {loading ? '🔍 Finding Best Route...' : isWakingUp ? '⏳ Waking Server...' : '🚀 Find Route'}
       </button>
+      
       {error && (
         <div className="mumbai-error">
           ⚠️ {error}
         </div>
       )}
+      
       {routeResult && (
         <div className="mumbai-route-result">
           {/* Summary Cards */}
@@ -262,6 +327,7 @@ function Home({
               </div>
             </div>
           </div>
+          
           {/* Detailed Instructions */}
           <div style={{
             background: 'white',
@@ -277,7 +343,7 @@ function Home({
                 key={idx}
                 style={{
                   marginBottom: line === '' ? '8px' : '4px',
-                  fontWeight: line.startsWith('🚆') || line.startsWith('⏱️') || line.startsWith('💰') ? '600' : '400',
+                  fontWeight: line.startsWith('🚆') || line.startsWith('🚇') || line.startsWith('⏱️') || line.startsWith('💰') ? '600' : '400',
                   color: line.startsWith('🔄') ? '#6366f1' : '#1e293b'
                 }}
               >
@@ -285,15 +351,17 @@ function Home({
               </div>
             ))}
           </div>
+          
           <button
             className="mumbai-btn"
             style={{ marginTop: '16px', width: '100%' }}
             onClick={() => navigate('/map')}
           >
-            View Map
+            🗺️ View Map
           </button>
         </div>
       )}
+      
       {allRoutes && (
         <div style={{ marginTop: '20px' }}>
           <h3 style={{
@@ -352,6 +420,7 @@ function Home({
           </div>
         </div>
       )}
+      
       <div style={{
         marginTop: '24px',
         textAlign: 'center',
