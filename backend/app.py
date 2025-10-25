@@ -415,6 +415,24 @@ def format_route_instructions(route_data):
 
 # ===================== API ENDPOINTS =====================
 
+@app.route('/')
+def home():
+    """Root endpoint - API information"""
+    return jsonify({
+        'name': 'Mumbai Journey Planner API',
+        'version': '2.0-perfect',
+        'status': 'running',
+        'endpoints': {
+            'health': '/api/health',
+            'stations': '/api/stations',
+            'journey': '/api/journey (POST)',
+            'all_routes': '/api/journey/all (POST)',
+            'debug': '/api/debug/path (POST)'
+        },
+        'documentation': 'Send POST requests to /api/journey with {from, to, routeType}',
+        'stations': len(G.nodes()),
+        'connections': len(G.edges())
+    })
 def normalize_station(name):
     """Case-insensitive station matching with fuzzy support"""
     name_lower = name.lower().strip()
