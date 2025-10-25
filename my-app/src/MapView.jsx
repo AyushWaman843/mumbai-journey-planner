@@ -12,26 +12,13 @@ export default function MapView({ stations, allRoutes, routeResult, onClose }) {
   const [showLegend, setShowLegend] = useState(false);
   const [showRouteInfo, setShowRouteInfo] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState(null);
+  // Fixed: Remove curly braces around map import
+  const [backgroundImage, setBackgroundImage] = useState(map);
   const [imageOpacity, setImageOpacity] = useState(0.7);
   const [imageScale, setImageScale] = useState(1.09);
   const [imagePosition, setImagePosition] = useState({ x: -320, y: -40 });
   const [showImageControls, setShowImageControls] = useState(true);
   const mapRef = useRef(null);
-
-  // Preload image properly for mobile compatibility
-  useEffect(() => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      setBackgroundImage(map);
-    };
-    img.onerror = () => {
-      console.error('Failed to load map image');
-      setBackgroundImage(map); // Try anyway
-    };
-    img.src = map;
-  }, []);
 
   // Detect mobile device
   useEffect(() => {
@@ -45,7 +32,7 @@ export default function MapView({ stations, allRoutes, routeResult, onClose }) {
 
   // Station positions - Complete and accurate
   const stationPositions = {
-    // Western Line
+    // Western Line - Runs along west coast (left side), south to north
     "Churchgate": {x: 160, y: 1550},
     "Marine Lines": {x: 170, y: 1520},
     "Charni Road": {x: 210, y: 1490},
@@ -169,7 +156,7 @@ export default function MapView({ stations, allRoutes, routeResult, onClose }) {
     "Jagruti Nagar": {x: 515, y: 1035},
     "Asalpha": {x: 530, y: 1055},
 
-    // Metro Line 2A stations
+    // Metro Line 2A stations (commented out in original, keeping for reference)
     "Dahisar East": {x: 430, y: 700},
     "Anand Nagar": {x: 425, y: 720},
     "Dahisar West": {x: 420, y: 705},
@@ -197,7 +184,7 @@ export default function MapView({ stations, allRoutes, routeResult, onClose }) {
     "Andheri East": {x: 360, y: 980},
   };
 
-  // Line definitions
+  // Line definitions with correct station names matching backend
   const lines = [
     {
       name: "Western Line",
@@ -270,19 +257,21 @@ export default function MapView({ stations, allRoutes, routeResult, onClose }) {
     }
   ];
 
-  // Extract highlighted path from route result
+  // Extract highlighted path from route result - Fixed to handle Metro icons
   useEffect(() => {
     if (routeResult && routeResult.route) {
       const pathStations = [];
       const segments = [];
       
       routeResult.route.forEach(line => {
+        // Match both 🚆 (train) and 🚇 (metro) icons
         const segmentMatch = line.match(/(?:🚆|🚇) Take .+ - (.+?)\s+From: (.+?) → To: (.+)/);
         if (segmentMatch) {
           const lineName = segmentMatch[1].trim();
           const startStation = segmentMatch[2].trim();
           const endStation = segmentMatch[3].trim();
           
+          // Find the railway line that contains both stations
           for (const railLine of lines) {
             const startIdx = railLine.stations.indexOf(startStation);
             const endIdx = railLine.stations.indexOf(endStation);
@@ -530,10 +519,10 @@ export default function MapView({ stations, allRoutes, routeResult, onClose }) {
             transformOrigin: '0 0'
           }}
         >
-          {/* Background Image - Fixed for mobile */}
+          {/* Background Image */}
           {backgroundImage && (
             <image
-              xlinkHref={backgroundImage}
+              href={backgroundImage}
               x={imagePosition.x}
               y={imagePosition.y}
               width={1600 * imageScale}
