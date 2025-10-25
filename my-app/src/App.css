@@ -1,0 +1,197 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: #f0f4f8;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mumbai-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.mumbai-train-img {
+  width: 200px;
+  height: auto;
+  display: block;
+  margin: 0 auto 24px;
+}
+
+.mumbai-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.mumbai-desc {
+  font-size: 15px;
+  color: #64748b;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.mumbai-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Autosuggest container */
+.react-autosuggest__container {
+  position: relative;
+  width: 100%;
+}
+
+/* Input field */
+.react-autosuggest__input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.2s ease;
+  color: #1e293b;
+  background: #ffffff;
+}
+
+.react-autosuggest__input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.react-autosuggest__input::placeholder {
+  color: #94a3b8;
+}
+
+/* Suggestions container */
+.react-autosuggest__suggestions-container {
+  position: absolute;
+  width: 100%;
+  z-index: 10;
+  margin-top: 4px;
+}
+
+.react-autosuggest__suggestions-container--open {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+/* Suggestions list */
+.react-autosuggest__suggestions-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+
+/* Individual suggestion */
+.react-autosuggest__suggestion {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 15px;
+  color: #1e293b;
+  transition: background 0.15s ease;
+}
+
+.react-autosuggest__suggestion--highlighted {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+/* Button */
+.mumbai-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #3b82f6;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.mumbai-btn:hover {
+  background: #2563eb;
+}
+
+.mumbai-btn:active {
+  transform: translateY(1px);
+  background: #1d4ed8;
+}
+
+/* Error message */
+.mumbai-error {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+  border: 1px solid #fecaca;
+}
+
+/* Route result */
+.mumbai-route-result {
+  margin-top: 24px;
+  padding: 20px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  color: #1e40af;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Scrollbar styling for suggestions */
+.react-autosuggest__suggestions-container--open::-webkit-scrollbar {
+  width: 6px;
+}
+
+.react-autosuggest__suggestions-container--open::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.react-autosuggest__suggestions-container--open::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .mumbai-card {
+    padding: 28px 20px;
+  }
+
+  .mumbai-title {
+    font-size: 24px;
+  }
+
+  .mumbai-desc {
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+}
