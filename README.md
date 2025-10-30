@@ -436,9 +436,9 @@ Educational project for DSA coursework.
 
 ## 👤 Author
 
-**[Your Name]**  
+**Ayush Waman**  
 DSA Project - Mumbai Journey Planner  
-[Your Institution]
+SVKM NMIMS Mukesh Patel School Of Technology Management & Engineering
 
 ---
 
